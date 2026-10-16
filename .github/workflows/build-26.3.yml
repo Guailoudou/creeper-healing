@@ -7,7 +7,10 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,18 +21,28 @@ jobs:
           distribution: temurin
           java-version: '25'
 
-      - name: Setup Gradle
+      - name: Install Gradle 9.8.0
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.8.0'
 
-      - name: Build with Gradle
-        run: gradle build --no-daemon -x test
+      - name: Build with Gradle (no wrapper)
+        shell: bash
+        run: gradle build --no-daemon -x test --gradle-distribution-url "https://services.gradle.org/distributions/gradle-9.8.0-bin.zip" 2>/dev/null || gradle build --no-daemon -x test
         continue-on-error: false
 
-      - name: Upload build artifacts
+      - name: Upload build artifacts (Linux)
+        if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v4
         with:
           name: creeperhealing-26.3
+          path: build/libs/*.jar
+          if-no-files-found: error
+
+      - name: Upload build artifacts (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: creeperhealing-26.3-win
           path: build/libs/*.jar
           if-no-files-found: error
