@@ -2,11 +2,11 @@ package io.github.arkosammy12.creeperhealing.explosions.factories;
 
 import io.github.arkosammy12.creeperhealing.blocks.DoubleAffectedBlock;
 import io.github.arkosammy12.creeperhealing.explosions.*;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Pair;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.server.level.ServerLevel;
+import com.mojang.datafixers.util.Pair;
+import net.minecraft.core.BlockPos;
 import org.jetbrains.annotations.Nullable;
 import io.github.arkosammy12.creeperhealing.blocks.AffectedBlock;
 import io.github.arkosammy12.creeperhealing.blocks.SingleAffectedBlock;
@@ -18,13 +18,13 @@ import java.util.*;
 public class DefaultExplosionFactory implements ExplosionEventFactory<AbstractExplosionEvent> {
 
     private final Map<BlockPos, Pair<BlockState, BlockEntity>> affectedStatesAndBlockEntities;
-    private final ServerWorld world;
+    private final ServerLevel world;
     private final int blastRadius;
     private final Set<BlockPos> affectedPositions = new HashSet<>();
     private final BlockPos center;
     private final List<BlockPos> vanillaAffectedPositions;
 
-    public DefaultExplosionFactory(Map<BlockPos, Pair<BlockState, BlockEntity>> affectedStatesAndBlockEntities, List<BlockPos> vanillaAffectedPositions, List<BlockPos> indirectlyExplodedPositions, ServerWorld world) {
+    public DefaultExplosionFactory(Map<BlockPos, Pair<BlockState, BlockEntity>> affectedStatesAndBlockEntities, List<BlockPos> vanillaAffectedPositions, List<BlockPos> indirectlyExplodedPositions, ServerLevel world) {
         this.affectedStatesAndBlockEntities = affectedStatesAndBlockEntities;
         this.world = world;
         this.affectedPositions.addAll(vanillaAffectedPositions);
@@ -53,7 +53,7 @@ public class DefaultExplosionFactory implements ExplosionEventFactory<AbstractEx
     }
 
     @Override
-    public @Nullable AbstractExplosionEvent createExplosionEvent(List<BlockPos> affectedPositions, ServerWorld world) {
+    public @Nullable AbstractExplosionEvent createExplosionEvent(List<BlockPos> affectedPositions, ServerLevel world) {
         List<AffectedBlock> affectedBlocks = this.processAffectedPositions(affectedPositions, world);
         if (affectedBlocks == null || affectedBlocks.isEmpty()) {
             return null;
@@ -111,12 +111,12 @@ public class DefaultExplosionFactory implements ExplosionEventFactory<AbstractEx
     }
 
     @Override
-    public ServerWorld getWorld() {
+    public ServerLevel getWorld() {
         return this.world;
     }
 
     @Nullable
-    private List<AffectedBlock> processAffectedPositions(List<BlockPos> affectedPositions, ServerWorld world) {
+    private List<AffectedBlock> processAffectedPositions(List<BlockPos> affectedPositions, ServerLevel world) {
         List<BlockPos> positionsToHeal = ExplosionUtils.filterPositionsToHeal(affectedPositions, (pos) -> this.affectedStatesAndBlockEntities.get(pos).getLeft());
         if (positionsToHeal.isEmpty()) {
             return null;

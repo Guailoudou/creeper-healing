@@ -1,6 +1,6 @@
 package io.github.arkosammy12.creeperhealing.explosions.ducks;
 
-import net.minecraft.world.World;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 

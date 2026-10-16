@@ -2,18 +2,18 @@ package io.github.arkosammy12.creeperhealing.blocks;
 
 import io.github.arkosammy12.monkeyconfig.base.Setting;
 import io.github.arkosammy12.monkeyconfig.sections.maps.StringMapSection;
-import net.minecraft.block.*;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.enums.ChestType;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.RegistryKey;
+import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.properties.ChestType;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.resources.Identifier;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import io.github.arkosammy12.creeperhealing.config.ConfigUtils;
@@ -28,13 +28,13 @@ public class SingleAffectedBlock implements AffectedBlock {
     public static final String TYPE = "single_affected_block";
     private final BlockPos blockPos;
     private final BlockState blockState;
-    private final RegistryKey<World> worldRegistryKey;
+    private final ResourceKey<World> worldRegistryKey;
     @Nullable
-    private final NbtCompound nbt;
+    private final CompoundTag nbt;
     private long timer;
     private boolean placed;
 
-    protected SingleAffectedBlock(BlockPos blockPos, BlockState blockState, RegistryKey<World> registryKey, @Nullable NbtCompound nbt, long timer, boolean placed) {
+    protected SingleAffectedBlock(BlockPos blockPos, BlockState blockState, ResourceKey<World> registryKey, @Nullable CompoundTag nbt, long timer, boolean placed) {
         this.blockPos = blockPos;
         this.blockState = blockState;
         this.worldRegistryKey = registryKey;
@@ -48,12 +48,12 @@ public class SingleAffectedBlock implements AffectedBlock {
     }
 
     @Override
-    public RegistryKey<World> getWorldRegistryKey() {
+    public ResourceKey<World> getWorldRegistryKey() {
         return this.worldRegistryKey;
     }
 
     @Override
-    public ServerWorld getWorld(@NotNull MinecraftServer server) {
+    public ServerLevel getWorld(@NotNull MinecraftServer server) {
         return server.getWorld(this.getWorldRegistryKey());
     }
 
@@ -68,7 +68,7 @@ public class SingleAffectedBlock implements AffectedBlock {
     }
 
     @Nullable
-    public NbtCompound getNbt() {
+    public CompoundTag getNbt() {
         return this.nbt;
     }
 

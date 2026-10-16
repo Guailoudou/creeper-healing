@@ -1,8 +1,8 @@
 package io.github.arkosammy12.creeperhealing.explosions;
 
-import net.minecraft.util.StringIdentifiable;
+import net.minecraft.util.StringRepresentable;
 
-public enum ExplosionHealingMode implements StringIdentifiable {
+public enum ExplosionHealingMode implements StringRepresentable {
 
     DEFAULT_MODE("default_mode"),
     DAYTIME_HEALING_MODE("daytime_healing_mode"),

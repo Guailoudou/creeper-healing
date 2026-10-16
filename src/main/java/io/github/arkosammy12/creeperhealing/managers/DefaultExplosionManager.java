@@ -10,13 +10,13 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.arkosammy12.creeperhealing.explosions.AbstractExplosionEvent;
 import io.github.arkosammy12.creeperhealing.explosions.ExplosionEvent;
 import io.github.arkosammy12.creeperhealing.explosions.SerializedExplosionEvent;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.Pair;
-import net.minecraft.util.WorldSavePath;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.resources.Identifier;
+import com.mojang.datafixers.util.Pair;
+import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.core.BlockPos;
 import io.github.arkosammy12.creeperhealing.CreeperHealing;
 import io.github.arkosammy12.creeperhealing.blocks.AffectedBlock;
 import io.github.arkosammy12.creeperhealing.blocks.SingleAffectedBlock;
@@ -126,7 +126,7 @@ public class DefaultExplosionManager implements ExplosionManager {
 
     @Override
     public void storeExplosionEvents(MinecraftServer server) {
-        Path savedExplosionsFilePath = server.getSavePath(WorldSavePath.ROOT).resolve(SCHEDULED_EXPLOSIONS_FILE);
+        Path savedExplosionsFilePath = server.getSavePath(LevelResource.ROOT).resolve(SCHEDULED_EXPLOSIONS_FILE);
         DataResult<JsonElement> encodedExplosions = this.codec.encodeStart(server.getRegistryManager().getOps(JsonOps.COMPRESSED), this);
         if (encodedExplosions.isError()) {
             CreeperHealing.LOGGER.error("Error storing creeper healing explosion(s): No value present!");
@@ -145,7 +145,7 @@ public class DefaultExplosionManager implements ExplosionManager {
 
     @Override
     public void readExplosionEvents(MinecraftServer server) {
-        Path savedExplosionsFilePath = server.getSavePath(WorldSavePath.ROOT).resolve(SCHEDULED_EXPLOSIONS_FILE);
+        Path savedExplosionsFilePath = server.getSavePath(LevelResource.ROOT).resolve(SCHEDULED_EXPLOSIONS_FILE);
         try {
             if (!Files.exists(savedExplosionsFilePath)) {
                 CreeperHealing.LOGGER.warn("Scheduled explosions file not found! Creating new one at {}", savedExplosionsFilePath);

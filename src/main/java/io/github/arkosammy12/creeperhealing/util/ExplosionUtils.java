@@ -1,19 +1,19 @@
 package io.github.arkosammy12.creeperhealing.util;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.tag.BlockTags;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3i;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Vec3i;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import io.github.arkosammy12.creeperhealing.blocks.AffectedBlock;
 import io.github.arkosammy12.creeperhealing.config.ConfigUtils;
@@ -78,7 +78,7 @@ public final class ExplosionUtils {
     }
 
     // The goal is to heal blocks inwards from the edge of the explosion, bottom to top, non-transparent blocks first
-    public static @NotNull List<AffectedBlock> sortAffectedBlocks(@NotNull List<AffectedBlock> affectedBlocksList, ServerWorld world) {
+    public static @NotNull List<AffectedBlock> sortAffectedBlocks(@NotNull List<AffectedBlock> affectedBlocksList, ServerLevel world) {
         List<AffectedBlock> sortedAffectedBlocks = new ArrayList<>(affectedBlocksList);
         List<BlockPos> affectedBlocksAsPositions = sortedAffectedBlocks.stream().map(AffectedBlock::getBlockPos).collect(Collectors.toList());
         int centerX = getCenterXCoordinate(affectedBlocksAsPositions);
@@ -180,11 +180,11 @@ public final class ExplosionUtils {
         if (!doPlacementSoundEffect) {
             return;
         }
-        world.playSound(null, blockPos, blockState.getSoundGroup().getPlaceSound(), SoundCategory.BLOCKS, blockState.getSoundGroup().getVolume(), blockState.getSoundGroup().getPitch());
+        world.playSound(null, blockPos, blockState.getSoundGroup().getPlaceSound(), SoundSource.BLOCKS, blockState.getSoundGroup().getVolume(), blockState.getSoundGroup().getPitch());
     }
 
     public static void spawnParticles(World world, BlockPos blockPos) {
-        if (!(world instanceof ServerWorld serverWorld)) {
+        if (!(world instanceof ServerLevel serverWorld)) {
             return;
         }
         boolean blockPlacementParticlesSetting = ConfigUtils.getRawBooleanSetting(ConfigUtils.BLOCK_PLACEMENT_PARTICLES);

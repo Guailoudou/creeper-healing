@@ -4,18 +4,18 @@ import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import io.github.arkosammy12.creeperhealing.explosions.ducks.ServerWorldDuck;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.registry.Registries;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Pair;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
-import net.minecraft.world.explosion.Explosion;
-import net.minecraft.world.explosion.ExplosionImpl;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.server.level.ServerLevel;
+import com.mojang.datafixers.util.Pair;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.Explosion;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -32,14 +32,14 @@ import io.github.arkosammy12.creeperhealing.util.ExplosionUtils;
 
 import java.util.*;
 
-@Mixin(ExplosionImpl.class)
+@Mixin(Explosion.class)
 public abstract class ExplosionImplMixin implements Explosion, ExplosionImplDuck {
 
     @Shadow public abstract @Nullable Entity getEntity();
 
     @Shadow @Nullable public abstract LivingEntity getCausingEntity();
 
-    @Shadow public abstract ServerWorld getWorld();
+    @Shadow public abstract ServerLevel getWorld();
 
     @Unique
     @Nullable
@@ -114,13 +114,13 @@ public abstract class ExplosionImplMixin implements Explosion, ExplosionImplDuck
     @WrapMethod(method = "destroyBlocks")
     private void onDestroyBlocks(List<BlockPos> positions, Operation<Void> original) {
 
-        // Make sure the thread local is reset when entering and exiting ExplosionImpl#destroyBlocks
+        // Make sure the thread local is reset when entering and exiting Explosion#destroyBlocks
         // If adding more logic here, remember to check logical server side with World#isClient
         ExplosionUtils.DROP_BLOCK_ITEMS.set(true);
         ExplosionUtils.DROP_CONTAINER_INVENTORY_ITEMS.set(true);
 
         World world = this.getWorld();
-        if ((!(world instanceof ServerWorld serverWorld)) || !this.creeperhealing$shouldHeal()) {
+        if ((!(world instanceof ServerLevel serverWorld)) || !this.creeperhealing$shouldHeal()) {
             this.vanillaAffectedPositions.clear();
             this.affectedStatesAndBlockEntities.clear();
             this.indirectlyAffectedPositions.clear();

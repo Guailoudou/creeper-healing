@@ -1,12 +1,12 @@
 package io.github.arkosammy12.creeperhealing.blocks;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.registry.RegistryKey;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 import io.github.arkosammy12.creeperhealing.config.ConfigUtils;
 import io.github.arkosammy12.creeperhealing.explosions.ExplosionEvent;
@@ -17,9 +17,9 @@ public interface AffectedBlock {
 
     BlockState getBlockState();
 
-    RegistryKey<World> getWorldRegistryKey();
+    ResourceKey<World> getWorldRegistryKey();
 
-    ServerWorld getWorld(MinecraftServer server);
+    ServerLevel getWorld(MinecraftServer server);
 
     long getBlockTimer();
 
@@ -34,7 +34,7 @@ public interface AffectedBlock {
     SerializedAffectedBlock asSerialized();
 
     static AffectedBlock newInstance(BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, World world) {
-        RegistryKey<World> worldRegistryKey = world.getRegistryKey();
+        ResourceKey<World> worldRegistryKey = world.getRegistryKey();
         long blockPlacementDelay = ConfigUtils.getBlockPlacementDelay();
         boolean restoreBlockNbt = ConfigUtils.getRawBooleanSetting(ConfigUtils.RESTORE_BLOCK_NBT);
         if (blockEntity != null && restoreBlockNbt) {
@@ -44,7 +44,7 @@ public interface AffectedBlock {
     }
 
     static AffectedBlock newInstance(BlockPos firstHalfPos, BlockState firstHalfState, @Nullable BlockEntity firstHalfBlockEntity, BlockPos secondHalfPos, @Nullable BlockState secondHalfState, @Nullable BlockEntity secondHalfBlockEntity, World world) {
-        RegistryKey<World> worldRegistryKey = world.getRegistryKey();
+        ResourceKey<World> worldRegistryKey = world.getRegistryKey();
         long blockPlacementDelay = ConfigUtils.getBlockPlacementDelay();
         boolean restoreBlockNbt = ConfigUtils.getRawBooleanSetting(ConfigUtils.RESTORE_BLOCK_NBT);
         if ((firstHalfBlockEntity != null && secondHalfBlockEntity != null) && restoreBlockNbt) {

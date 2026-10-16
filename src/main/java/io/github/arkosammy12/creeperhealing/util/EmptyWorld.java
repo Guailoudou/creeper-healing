@@ -1,33 +1,33 @@
 package io.github.arkosammy12.creeperhealing.util;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.fluid.Fluids;
-import net.minecraft.registry.DynamicRegistryManager;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.resource.featuretoggle.FeatureSet;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.world.Heightmap;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldView;
-import net.minecraft.world.attribute.EnvironmentAttributeAccess;
-import net.minecraft.world.biome.Biome;
-import net.minecraft.world.biome.BiomeKeys;
-import net.minecraft.world.biome.source.BiomeAccess;
-import net.minecraft.world.border.WorldBorder;
-import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.ChunkStatus;
-import net.minecraft.world.chunk.EmptyChunk;
-import net.minecraft.world.chunk.light.LightingProvider;
-import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.core.Holder;
+import com.mojang.renderpearl.backend.vulkan.init.FeatureSet;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.attribute.EnvironmentAttributeReader;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.biome.BiomeManager;
+import net.minecraft.world.level.border.WorldBorder;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
+import net.minecraft.world.level.chunk.EmptyLevelChunk;
+import net.minecraft.world.level.lighting.LevelLightEngine;
+import net.minecraft.world.level.dimension.DimensionType;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -51,7 +51,7 @@ public class EmptyWorld implements WorldView {
     @Override
     public Chunk getChunk(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
 
-        return new EmptyChunk(this.world, new ChunkPos(chunkX, chunkZ), world.getRegistryManager().getOrThrow(RegistryKeys.BIOME).getOrThrow(BiomeKeys.THE_VOID));
+        return new EmptyLevelChunk(this.world, new ChunkPos(chunkX, chunkZ), world.getRegistryManager().getOrThrow(Registries.BIOME).getOrThrow(Biomes.THE_VOID));
     }
 
     @Override
@@ -70,13 +70,13 @@ public class EmptyWorld implements WorldView {
     }
 
     @Override
-    public BiomeAccess getBiomeAccess() {
+    public BiomeManager getBiomeAccess() {
         return this.world.getBiomeAccess();
     }
 
     @Override
-    public RegistryEntry<Biome> getGeneratorStoredBiome(int biomeX, int biomeY, int biomeZ) {
-        return world.getRegistryManager().getOrThrow(RegistryKeys.BIOME).getOrThrow(BiomeKeys.THE_VOID);
+    public Holder<Biome> getGeneratorStoredBiome(int biomeX, int biomeY, int biomeZ) {
+        return world.getRegistryManager().getOrThrow(Registries.BIOME).getOrThrow(Biomes.THE_VOID);
     }
 
     @Override
@@ -95,7 +95,7 @@ public class EmptyWorld implements WorldView {
     }
 
     @Override
-    public DynamicRegistryManager getRegistryManager() {
+    public RegistryAccess getRegistryManager() {
         return this.world.getRegistryManager();
     }
 
@@ -115,7 +115,7 @@ public class EmptyWorld implements WorldView {
     }
 
     @Override
-    public LightingProvider getLightingProvider() {
+    public LevelLightEngine getLightingProvider() {
         return this.world.getLightingProvider();
     }
 

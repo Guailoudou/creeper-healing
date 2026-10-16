@@ -2,21 +2,21 @@ package io.github.arkosammy12.creeperhealing.blocks;
 
 import io.github.arkosammy12.monkeyconfig.base.Setting;
 import io.github.arkosammy12.monkeyconfig.sections.maps.StringMapSection;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.FallingBlock;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.enums.BedPart;
-import net.minecraft.block.enums.DoubleBlockHalf;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.FallingBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.properties.BedPart;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.state.property.Properties;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.resources.Identifier;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
 import io.github.arkosammy12.creeperhealing.config.ConfigUtils;
 import io.github.arkosammy12.creeperhealing.explosions.ExplosionEvent;
 import io.github.arkosammy12.creeperhealing.util.ExplosionUtils;
@@ -29,11 +29,11 @@ public class DoubleAffectedBlock extends SingleAffectedBlock {
     private final BlockPos secondHalfPos;
     private final BlockState secondHalfState;
     @Nullable
-    private final NbtCompound secondHalfNbt;
+    private final CompoundTag secondHalfNbt;
 
     public static final String TYPE = "double_affected_block";
 
-    protected DoubleAffectedBlock(BlockPos firstHalfPos, BlockState firstHalfState, @Nullable NbtCompound firstHalfNbt, @Nullable BlockPos secondHalfPos, @Nullable BlockState secondHalfState, @Nullable NbtCompound secondHalfNbt, RegistryKey<World> registryKey, long affectedBlockTimer, boolean placed) {
+    protected DoubleAffectedBlock(BlockPos firstHalfPos, BlockState firstHalfState, @Nullable CompoundTag firstHalfNbt, @Nullable BlockPos secondHalfPos, @Nullable BlockState secondHalfState, @Nullable CompoundTag secondHalfNbt, ResourceKey<World> registryKey, long affectedBlockTimer, boolean placed) {
         super(firstHalfPos, firstHalfState, registryKey, firstHalfNbt, affectedBlockTimer, placed);
         this.secondHalfNbt = secondHalfNbt;
         if (secondHalfState == null) {
@@ -70,7 +70,7 @@ public class DoubleAffectedBlock extends SingleAffectedBlock {
     }
 
     @Nullable
-    public NbtCompound getSecondHalfNbt() {
+    public CompoundTag getSecondHalfNbt() {
         return this.secondHalfNbt;
     }
 
