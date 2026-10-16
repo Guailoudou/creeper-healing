@@ -7,13 +7,22 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout creeper-healing
         uses: actions/checkout@v4
+
+      - name: Checkout monkey-utils (26.3 port)
+        uses: actions/checkout@v4
+        with:
+          repository: Guailoudou/monkey-utils-port
+          path: deps/monkey-utils
+
+      - name: Checkout fabric-permissions-api (26.3 port)
+        uses: actions/checkout@v4
+        with:
+          repository: Guailoudou/fabric-permissions-api-port
+          path: deps/fabric-permissions-api
 
       - name: Set up JDK 25
         uses: actions/setup-java@v4
@@ -26,23 +35,22 @@ jobs:
         with:
           gradle-version: '9.8.0'
 
-      - name: Build with Gradle (no wrapper)
-        shell: bash
-        run: gradle build --no-daemon -x test --gradle-distribution-url "https://services.gradle.org/distributions/gradle-9.8.0-bin.zip" 2>/dev/null || gradle build --no-daemon -x test
-        continue-on-error: false
+      - name: Build fabric-permissions-api
+        run: |
+          cd deps/fabric-permissions-api
+          gradle publishToMavenLocal --no-daemon -x test
 
-      - name: Upload build artifacts (Linux)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Build monkey-utils
+        run: |
+          cd deps/monkey-utils
+          gradle publishToMavenLocal --no-daemon -x test
+
+      - name: Build creeper-healing
+        run: gradle build --no-daemon -x test
+
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: creeperhealing-26.3
-          path: build/libs/*.jar
-          if-no-files-found: error
-
-      - name: Upload build artifacts (Windows)
-        if: matrix.os == 'windows-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: creeperhealing-26.3-win
           path: build/libs/*.jar
           if-no-files-found: error
