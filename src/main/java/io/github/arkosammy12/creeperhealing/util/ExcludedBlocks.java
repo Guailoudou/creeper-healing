@@ -29,11 +29,11 @@ public enum ExcludedBlocks {
             return false;
         }
         return Arrays.stream(ExcludedBlocks.values()).anyMatch(excludedBlock -> {
-            if (block.getDefaultState().isOf(excludedBlock.blockInstance)) {
+            if (block.defaultBlockState().is(excludedBlock.blockInstance)) {
                 return true;
             }
             TagKey<Block> blockTag = excludedBlock.blockTag;
-            return blockTag != null && block.getDefaultState().isIn(blockTag);
+            return blockTag != null && block.defaultBlockState().is(blockTag);
         });
     }
 
@@ -42,11 +42,11 @@ public enum ExcludedBlocks {
             return false;
         }
         return Arrays.stream(ExcludedBlocks.values()).anyMatch(excludedBlock -> {
-            if (state.isOf(excludedBlock.blockInstance)) {
+            if (state.is(excludedBlock.blockInstance)) {
                 return true;
             }
             TagKey<Block> blockTag = excludedBlock.blockTag;
-            return blockTag != null && state.isIn(blockTag);
+            return blockTag != null && state.is(blockTag);
         });
     }
 

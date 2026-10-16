@@ -10,8 +10,12 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.ExplosionDamageCalculator;
+import net.minecraft.world.clock.ServerClockManager;
+import net.minecraft.core.Holder;
+import net.minecraft.resources.ResourceKey;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.Inject;
 import net.minecraft.world.level.Explosion;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -29,17 +33,20 @@ public abstract class ServerWorldMixin implements ServerWorldDuck {
     @Unique
     private final Collection<BlockPos> affectedBlockPositions = new ArrayList<>();
 
-    @WrapOperation(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerLevel;setTimeOfDay(J)V", ordinal = 0))
-    private void fastForwardDaytimeHealingModeExplosionsOnNightSkipped(ServerLevel instance, long timeOfDay, Operation<Void> original, @Local(argsOnly = true) BooleanSupplier shouldKeepTicking) {
-        original.call(instance, timeOfDay);
+    @WrapOperation(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/clock/ServerClockManager;moveToTimeMarker(Lnet/minecraft/core/Holder;Lnet/minecraft/resources/ResourceKey;)Lnet/minecraft/world/clock/ServerClockManager$MoveResult;", ordinal = 0))
+    private void fastForwardDaytimeHealingModeExplosionsOnNightSkipped(ServerClockManager instance, Holder<?> clock, ResourceKey<?> timeMarker, Operation<Object> original, @Local(argsOnly = true) BooleanSupplier shouldKeepTicking) {
+        original.call(instance, clock, timeMarker);
         DaylightCycleEvents.ON_NIGHT_SKIPPED.invoker().onNightSkipped(((ServerLevel) (Object) this), shouldKeepTicking);
     }
 
-    @WrapOperation(method = "createExplosion", at = @At(value = "NEW", target = "(Lnet/minecraft/server/world/ServerLevel;Lnet/minecraft/entity/Entity;Lnet/minecraft/entity/damage/DamageSource;Lnet/minecraft/world/explosion/ExplosionDamageCalculator;Lnet/minecraft/util/math/Vec3;FZLnet/minecraft/world/explosion/Explosion$DestructionType;)Lnet/minecraft/world/explosion/Explosion;"))
-    private Explosion attachExplosionSourceTypeToExplosion(ServerLevel world, Entity entity, DamageSource damageSource, ExplosionDamageCalculator behavior, Vec3 pos, float power, boolean createFire, Explosion.DestructionType destructionType, Operation<Explosion> original, @Local(argsOnly = true) World.ExplosionSourceType explosionSourceType) {
-        Explosion explosion = original.call(world, entity, damageSource, behavior, pos, power, createFire, destructionType);
-        ((ExplosionImplDuck) explosion).creeperhealing$setExplosionSourceType(explosionSourceType);
-        return explosion;
+
+    // 26.3: 爆炸入口 ServerLevel.explode(...)，在入口处把 ExplosionInteraction 附加给后续创建的 ServerExplosion
+    @Unique
+    private Level.ExplosionInteraction creeperhealing$currentInteraction = null;
+
+    @Inject(method = "explode(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/damagesource/DamageSource;Lnet/minecraft/world/level/ExplosionDamageCalculator;DDDFZLnet/minecraft/world/level/Level$ExplosionInteraction;)V", at = @At("HEAD"))
+    private void creeperhealing$captureExplosionInteraction(Entity source, DamageSource damageSource, ExplosionDamageCalculator behavior, double x, double y, double z, float power, boolean createFire, Level.ExplosionInteraction interaction, CallbackInfo ci) {
+        this.creeperhealing$currentInteraction = interaction;
     }
 
     @Override
@@ -55,6 +62,13 @@ public abstract class ServerWorldMixin implements ServerWorldDuck {
     @Override
     public boolean creeperhealing$isAffectedPosition(BlockPos pos) {
         return this.affectedBlockPositions.contains(pos);
+    }
+
+    @Override
+    public Level.ExplosionInteraction creeperhealing$getCurrentExplosionInteraction() {
+        Level.ExplosionInteraction interaction = this.creeperhealing$currentInteraction;
+        this.creeperhealing$currentInteraction = null;
+        return interaction;
     }
 
 }

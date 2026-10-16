@@ -37,7 +37,7 @@ import java.util.stream.Stream;
 
 public class DefaultExplosionManager implements ExplosionManager {
 
-    public static final Identifier ID = Identifier.of(CreeperHealing.MOD_ID, "default_explosion_manager");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(CreeperHealing.MOD_ID, "default_explosion_manager");
     private static final Function<ExplosionContext, ExplosionEventFactory<?>> explosionContextToFactoryFunction = explosionContext -> {
         List<BlockPos> indirectlyExplodedPositions = explosionContext.indirectlyAffectedPositions();
         Map<BlockPos, Pair<BlockState, BlockEntity>> affectedStatesAndBlockEntities = explosionContext.affectedStatesAndBlockEntities();
@@ -98,7 +98,7 @@ public class DefaultExplosionManager implements ExplosionManager {
 
     @Override
     public void tick(MinecraftServer server) {
-        if (this.explosionEvents.isEmpty() || !server.getTickManager().shouldTick()) {
+        if (this.explosionEvents.isEmpty() || server.getTickCount() < 0) {
             return;
         }
         for (ExplosionEvent explosionEvent : this.explosionEvents) {
@@ -126,8 +126,8 @@ public class DefaultExplosionManager implements ExplosionManager {
 
     @Override
     public void storeExplosionEvents(MinecraftServer server) {
-        Path savedExplosionsFilePath = server.getSavePath(LevelResource.ROOT).resolve(SCHEDULED_EXPLOSIONS_FILE);
-        DataResult<JsonElement> encodedExplosions = this.codec.encodeStart(server.getRegistryManager().getOps(JsonOps.COMPRESSED), this);
+        Path savedExplosionsFilePath = server.getWorldPath(LevelResource.ROOT).resolve(SCHEDULED_EXPLOSIONS_FILE);
+        DataResult<JsonElement> encodedExplosions = this.codec.encodeStart(server.registryAccess().createSerializationContext(JsonOps.COMPRESSED), this);
         if (encodedExplosions.isError()) {
             CreeperHealing.LOGGER.error("Error storing creeper healing explosion(s): No value present!");
             return;
@@ -145,7 +145,7 @@ public class DefaultExplosionManager implements ExplosionManager {
 
     @Override
     public void readExplosionEvents(MinecraftServer server) {
-        Path savedExplosionsFilePath = server.getSavePath(LevelResource.ROOT).resolve(SCHEDULED_EXPLOSIONS_FILE);
+        Path savedExplosionsFilePath = server.getWorldPath(LevelResource.ROOT).resolve(SCHEDULED_EXPLOSIONS_FILE);
         try {
             if (!Files.exists(savedExplosionsFilePath)) {
                 CreeperHealing.LOGGER.warn("Scheduled explosions file not found! Creating new one at {}", savedExplosionsFilePath);
@@ -154,7 +154,7 @@ public class DefaultExplosionManager implements ExplosionManager {
             }
             try (BufferedReader br = Files.newBufferedReader(savedExplosionsFilePath)) {
                 JsonElement jsonElement = JsonParser.parseReader(br);
-                DataResult<DefaultExplosionManager> decodedExplosionManager = this.codec.parse(server.getRegistryManager().getOps(JsonOps.COMPRESSED), jsonElement);
+                DataResult<DefaultExplosionManager> decodedExplosionManager = this.codec.parse(server.registryAccess().createSerializationContext(JsonOps.COMPRESSED), jsonElement);
                 decodedExplosionManager
                         .resultOrPartial(error -> CreeperHealing.LOGGER.error("Error reading scheduled explosions from file {}: {}", savedExplosionsFilePath, error))
                         .ifPresent(decodedManager -> {
@@ -196,7 +196,7 @@ public class DefaultExplosionManager implements ExplosionManager {
                 currentExplosionCenter = ExplosionUtils.calculateCenter(currentAffectedPositions);
             }
             int combinedRadius = newExplosionRadius + currentExplosionRadius;
-            double distanceBetweenCenters = Math.floor(Math.sqrt(newExplosionCenter.getSquaredDistance(currentExplosionCenter)));
+            double distanceBetweenCenters = Math.floor(Math.sqrt(newExplosionCenter.distSqr(currentExplosionCenter)));
             if (distanceBetweenCenters <= combinedRadius) {
                 collidingExplosions.add(explosionEvent);
             }

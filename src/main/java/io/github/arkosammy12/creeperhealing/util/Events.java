@@ -57,8 +57,8 @@ public final class Events {
         }
     }
 
-    private static void onSplashPotionHit(AbstractThrownPotion potionEntity, PotionContents potionContentsComponent, HitResult hitResult, World world) {
-        Iterable<MobEffectInstance> statusEffectsIterable = potionContentsComponent.getEffects();
+    private static void onSplashPotionHit(AbstractThrownPotion potionEntity, PotionContents potionContentsComponent, HitResult hitResult, Level world) {
+        Iterable<MobEffectInstance> statusEffectsIterable = potionContentsComponent.getAllEffects();
         List<MobEffectInstance> statusEffects = new ArrayList<>();
 
         for (MobEffectInstance statusEffectInstance : statusEffectsIterable) {
@@ -66,20 +66,20 @@ public final class Events {
         }
 
         BlockPos potionHitPosition = switch (hitResult.getType()) {
-            case BLOCK -> ((BlockHitResult) hitResult).getBlockPos().offset(((BlockHitResult) hitResult).getSide());
-            case ENTITY -> ((EntityHitResult) hitResult).getEntity().getBlockPos();
+            case BLOCK -> ((BlockHitResult) hitResult).getBlockPos().relative(((BlockHitResult) hitResult).getDirection());
+            case ENTITY -> ((EntityHitResult) hitResult).getEntity().blockPosition();
             case MISS -> null;
         };
 
         if (potionHitPosition == null) {
             return;
         }
-        Holder.Reference<MobEffect> instantHealthEffect = MobEffects.INSTANT_HEALTH.getKey().flatMap(key -> Registries.STATUS_EFFECT.getEntry(key.getValue())).orElse(null);
+        Holder<MobEffect> instantHealthEffect = MobEffects.INSTANT_HEALTH;
         if (instantHealthEffect == null) {
             return;
         }
         boolean hasInstantHealth = statusEffects.stream().anyMatch(statusEffect -> statusEffect.equals(instantHealthEffect));
-        Holder.Reference<MobEffect> regenerationEffect = MobEffects.REGENERATION.getKey().flatMap(key -> Registries.STATUS_EFFECT.getEntry(key.getValue())).orElse(null);
+        Holder<MobEffect> regenerationEffect = MobEffects.REGENERATION;
         if (regenerationEffect == null) {
             return;
         }
@@ -112,7 +112,7 @@ public final class Events {
     private static void onTimeCommand(CommandSourceStack serverCommandSource, int time, int newTime) {
         for (ExplosionEvent explosionEvent : CreeperHealing.EXPLOSION_MANAGER.getExplosionEvents().toList()) {
             if (explosionEvent instanceof DaytimeExplosionEvent daytimeExplosionEvent && explosionEvent.getHealTimer() > 0) {
-                daytimeExplosionEvent.setHealTimer(SharedConstants.TICKS_PER_IN_GAME_DAY - newTime);
+                daytimeExplosionEvent.setHealTimer(24000L - newTime);
             }
         }
     }

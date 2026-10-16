@@ -29,7 +29,7 @@ public enum ExplosionHealingMode implements StringRepresentable {
     }
 
     @Override
-    public String asString() {
+    public String getSerializedName() {
         return this.name;
     }
 

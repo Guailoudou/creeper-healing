@@ -1,5 +1,6 @@
 package io.github.arkosammy12.creeperhealing.util;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.entity.Entity;
@@ -32,22 +33,22 @@ public final class ExplosionUtils {
     public static final ThreadLocal<Boolean> DROP_CONTAINER_INVENTORY_ITEMS = ThreadLocal.withInitial(() -> true);
     public static final ThreadLocal<Boolean> FALLING_BLOCK_SCHEDULE_TICK = ThreadLocal.withInitial(() -> true);
 
-    public static void pushEntitiesUpwards(World world, BlockPos pos, BlockState state, boolean isTallBlock) {
-        if (!state.isSolidBlock(world, pos)) {
+    public static void pushEntitiesUpwards(Level world, BlockPos pos, BlockState state, boolean isTallBlock) {
+        if (!state.isRedstoneConductor(world, pos)) {
             return;
         }
         int amountToPush = isTallBlock ? 2 : 1;
-        for (Entity entity : world.getEntitiesByClass(LivingEntity.class, new Box(pos), Entity::isAlive)) {
+        for (Entity entity : world.getEntitiesOfClass(LivingEntity.class, new AABB(pos), Entity::isAlive)) {
             if (areAboveBlocksFree(world, pos, entity, amountToPush)) {
-                entity.refreshPositionAfterTeleport(entity.getEntityPos().withAxis(Direction.Axis.Y, entity.getBlockY() + amountToPush));
+                entity.setPos(entity.position().add(0, amountToPush, 0));
             }
         }
     }
 
-    private static boolean areAboveBlocksFree(World world, BlockPos pos, Entity entity, int amountToPush) {
-        for (int i = pos.getY(); i < pos.offset(Direction.Axis.Y, (int) Math.ceil(entity.getStandingEyeHeight())).getY(); i++) {
-            BlockPos currentPos = pos.withY(i + amountToPush);
-            if (world.getBlockState(currentPos).isSolidBlock(world, currentPos)) {
+    private static boolean areAboveBlocksFree(Level world, BlockPos pos, Entity entity, int amountToPush) {
+        for (int i = pos.getY(); i < pos.above((int) Math.ceil(entity.getEyeHeight())).getY(); i++) {
+            BlockPos currentPos = pos.atY(i + amountToPush);
+            if (world.getBlockState(currentPos).isRedstoneConductor(world, currentPos)) {
                 return false;
             }
         }
@@ -64,11 +65,11 @@ public final class ExplosionUtils {
             if (ExcludedBlocks.isExcluded(affectedState)) {
                 continue;
             }
-            boolean stateCannotHeal = affectedState.isAir() || affectedState.isOf(Blocks.TNT) || affectedState.isIn(BlockTags.FIRE);
+            boolean stateCannotHeal = affectedState.isAir() || affectedState.is(Blocks.TNT) || affectedState.is(BlockTags.FIRE);
             if (stateCannotHeal) {
                 continue;
             }
-            String affectedBlockIdentifier = Registries.BLOCK.getId(affectedState.getBlock()).toString();
+            String affectedBlockIdentifier = BuiltInRegistries.BLOCK.getKey(affectedState.getBlock()).toString();
             boolean whitelistContainsIdentifier = whitelist.contains(affectedBlockIdentifier);
             if (!whitelistEnabled || whitelistContainsIdentifier) {
                 affectedPositions.add(affectedPosition);
@@ -88,8 +89,8 @@ public final class ExplosionUtils {
         Comparator<AffectedBlock> yLevelComparator = Comparator.comparingInt(affectedBlock -> affectedBlock.getBlockPos().getY());
         sortedAffectedBlocks.sort(yLevelComparator);
         Comparator<AffectedBlock> transparencyComparator = (currentAffectedBlock, nextAffectedBlock) -> {
-            boolean isCurrentAffectedBlockTransparent = currentAffectedBlock.getBlockState().isTransparent();
-            boolean isNextAffectedBlockTransparent = nextAffectedBlock.getBlockState().isTransparent();
+            boolean isCurrentAffectedBlockTransparent = currentAffectedBlock.getBlockState().propagatesSkylightDown();
+            boolean isNextAffectedBlockTransparent = nextAffectedBlock.getBlockState().propagatesSkylightDown();
             return Boolean.compare(isCurrentAffectedBlockTransparent, isNextAffectedBlockTransparent);
         };
         sortedAffectedBlocks.sort(transparencyComparator);
@@ -174,16 +175,16 @@ public final class ExplosionUtils {
         return Arrays.stream(radii).max().orElse(0);
     }
 
-    public static void playBlockPlacementSoundEffect(World world, BlockPos blockPos, BlockState blockState) {
+    public static void playBlockPlacementSoundEffect(Level world, BlockPos blockPos, BlockState blockState) {
         boolean placementSoundEffectSetting = ConfigUtils.getRawBooleanSetting(ConfigUtils.BLOCK_PLACEMENT_SOUND_EFFECT);
-        boolean doPlacementSoundEffect = placementSoundEffectSetting && !world.isClient() && !blockState.isAir();
+        boolean doPlacementSoundEffect = placementSoundEffectSetting && !world.isClientSide() && !blockState.isAir();
         if (!doPlacementSoundEffect) {
             return;
         }
-        world.playSound(null, blockPos, blockState.getSoundGroup().getPlaceSound(), SoundSource.BLOCKS, blockState.getSoundGroup().getVolume(), blockState.getSoundGroup().getPitch());
+        world.playSound(null, blockPos, blockState.getSoundType().getPlaceSound(), SoundSource.BLOCKS, blockState.getSoundType().getVolume(), blockState.getSoundType().getPitch());
     }
 
-    public static void spawnParticles(World world, BlockPos blockPos) {
+    public static void spawnParticles(Level world, BlockPos blockPos) {
         if (!(world instanceof ServerLevel serverWorld)) {
             return;
         }
@@ -191,7 +192,7 @@ public final class ExplosionUtils {
         if (!blockPlacementParticlesSetting) {
             return;
         }
-        serverWorld.spawnParticles(ParticleTypes.CLOUD, blockPos.getX(), blockPos.getY() + 2, blockPos.getZ(), 1, 0, 1, 0, 0.001);
+        serverWorld.sendParticles(ParticleTypes.CLOUD, blockPos.getX(), blockPos.getY() + 2, blockPos.getZ(), 1, 0, 1, 0, 0.001);
     }
 
 }

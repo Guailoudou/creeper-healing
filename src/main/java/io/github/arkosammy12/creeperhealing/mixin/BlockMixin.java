@@ -4,6 +4,7 @@ import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import io.github.arkosammy12.creeperhealing.explosions.ducks.ServerWorldDuck;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -32,14 +33,14 @@ import java.util.List;
 public abstract class BlockMixin {
 
     @Shadow
-    public abstract BlockState getDefaultState();
+    public abstract BlockState defaultBlockState();
 
-    @WrapMethod(method = "getDroppedStacks(Lnet/minecraft/block/BlockState;Lnet/minecraft/server/world/ServerLevel;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/entity/BlockEntity;)Ljava/util/List;")
+    @WrapMethod(method = "getDrops(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/entity/BlockEntity;)Ljava/util/List;")
     private static List<ItemStack> modifyDroppedStacks(BlockState state, ServerLevel world, BlockPos pos, @Nullable BlockEntity blockEntity, Operation<List<ItemStack>> original) {
         return shouldDropStacks(state, world, pos) ? original.call(state, world, pos, blockEntity) : Collections.emptyList();
     }
 
-    @WrapMethod(method = "getDroppedStacks(Lnet/minecraft/block/BlockState;Lnet/minecraft/server/world/ServerLevel;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/entity/BlockEntity;Lnet/minecraft/entity/Entity;Lnet/minecraft/item/ItemStack;)Ljava/util/List;")
+    @WrapMethod(method = "getDrops(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/entity/BlockEntity;Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/item/ItemStack;)Ljava/util/List;")
     private static List<ItemStack> modifyDroppedStacks(BlockState state, ServerLevel world, BlockPos pos, @Nullable BlockEntity blockEntity, @Nullable Entity entity, ItemStack stack, Operation<List<ItemStack>> original) {
         return shouldDropStacks(state, world, pos) ? original.call(state, world, pos, blockEntity, entity, stack) : Collections.emptyList();
     }
@@ -53,7 +54,7 @@ public abstract class BlockMixin {
     }
 
     @SuppressWarnings("UnreachableCode")
-    @ModifyReturnValue(method = "shouldDropItemsOnExplosion", at = @At("RETURN"))
+    @ModifyReturnValue(method = "dropFromExplosion", at = @At("RETURN"))
     private boolean shouldExplosionDropItems(boolean original, Explosion explosion) {
 
         // Hardcoded exception. Place before all other logic
@@ -70,17 +71,18 @@ public abstract class BlockMixin {
             return original;
         }
 
-        World.ExplosionSourceType explosionSourceType = ((ExplosionImplDuck) explosion).creeperhealing$getExplosionSourceType();
+        Level.ExplosionInteraction explosionSourceType = ((ExplosionImplDuck) explosion).creeperhealing$getExplosionSourceType();
         boolean shouldDropItems = switch (explosionSourceType) {
             case MOB -> {
                 if (!ConfigUtils.getRawBooleanSetting(ConfigUtils.DROP_ITEMS_ON_MOB_EXPLOSIONS)) {
                     yield false;
                 }
-                LivingEntity causingEntity = explosion.getCausingEntity();
+                Entity causingEntityRaw = explosion.getDirectSourceEntity();
+                LivingEntity causingEntity = causingEntityRaw instanceof LivingEntity le ? le : null;
                 if (causingEntity == null) {
                     yield true;
                 }
-                String entityId = Registries.ENTITY_TYPE.getId(causingEntity.getType()).toString();
+                String entityId = BuiltInRegistries.ENTITY_TYPE.getKey(causingEntity.getType()).toString();
                 List<? extends String> dropItemsOnMobExplosionsBlacklist = ConfigUtils.getRawStringListSetting(ConfigUtils.DROP_ITEMS_ON_MOB_EXPLOSIONS_BLACKLIST);
                 yield !dropItemsOnMobExplosionsBlacklist.contains(entityId);
             }
@@ -96,7 +98,7 @@ public abstract class BlockMixin {
         }
 
         // Do not drop the item of the block itself if it is a container and its inventory is to be restored
-        if (this.getDefaultState().hasBlockEntity() && !ExplosionUtils.DROP_CONTAINER_INVENTORY_ITEMS.get()) {
+        if (this.defaultBlockState().hasBlockEntity() && !ExplosionUtils.DROP_CONTAINER_INVENTORY_ITEMS.get()) {
             shouldDropItems = false;
         }
 

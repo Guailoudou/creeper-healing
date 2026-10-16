@@ -9,7 +9,7 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.core.Holder;
-import com.mojang.renderpearl.backend.vulkan.init.FeatureSet;
+import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.ChunkPos;
@@ -24,6 +24,7 @@ import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.chunk.EmptyLevelChunk;
 import net.minecraft.world.level.lighting.LevelLightEngine;
@@ -34,54 +35,64 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * An instance of {@link  WorldView} backed by another instance.
+ * An instance of {@link  LevelReader} backed by another instance.
  * This class has the explicit purpose of simulating an empty world to be used
  * when calling {@link  BlockState#canPlaceAt} to check if the block needs a supporting block.
  * This way we guarantee that all positions read from this instance correspond to empty block states.
  */
-public class EmptyWorld implements WorldView {
+public class EmptyWorld implements LevelReader {
 
-    private final World world;
+    private final Level world;
 
-    public EmptyWorld(World world) {
+    public EmptyWorld(Level world) {
         this.world = world;
     }
 
     @Nullable
     @Override
-    public Chunk getChunk(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
+    public ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
 
-        return new EmptyLevelChunk(this.world, new ChunkPos(chunkX, chunkZ), world.getRegistryManager().getOrThrow(Registries.BIOME).getOrThrow(Biomes.THE_VOID));
+        return new EmptyLevelChunk(this.world, new ChunkPos(chunkX, chunkZ), world.registryAccess().lookupOrThrow(Registries.BIOME).getOrThrow(Biomes.THE_VOID));
     }
 
     @Override
-    public boolean isChunkLoaded(int chunkX, int chunkZ) {
-        return false;
+    public int getHeight(Heightmap.Types heightmap, int x, int z) {
+        return this.world.getHeight(heightmap, x, z);
     }
 
     @Override
-    public int getTopY(Heightmap.Type heightmap, int x, int z) {
-        return this.world.getTopY(heightmap, x, z);
-    }
-
-    @Override
-    public int getAmbientDarkness() {
+    public int getSkyDarken() {
         return 15;
     }
 
     @Override
-    public BiomeManager getBiomeAccess() {
-        return this.world.getBiomeAccess();
+    public BiomeManager getBiomeManager() {
+        return this.world.getBiomeManager();
     }
 
     @Override
-    public Holder<Biome> getGeneratorStoredBiome(int biomeX, int biomeY, int biomeZ) {
-        return world.getRegistryManager().getOrThrow(Registries.BIOME).getOrThrow(Biomes.THE_VOID);
+    public Holder<Biome> getUncachedNoiseBiome(int biomeX, int biomeY, int biomeZ) {
+        return world.registryAccess().lookupOrThrow(Registries.BIOME).getOrThrow(Biomes.THE_VOID);
     }
 
     @Override
-    public boolean isClient() {
+    public boolean hasChunk(int chunkX, int chunkZ) {
         return false;
+    }
+
+    @Override
+    public boolean isClientSide() {
+        return false;
+    }
+
+    @Override
+    public int getHeight() {
+        return this.world.getHeight();
+    }
+
+    @Override
+    public int getMinY() {
+        return this.world.getMinY();
     }
 
     @Override
@@ -90,33 +101,28 @@ public class EmptyWorld implements WorldView {
     }
 
     @Override
-    public DimensionType getDimension() {
-        return this.world.getDimension();
+    public DimensionType dimensionType() {
+        return this.world.dimensionType();
     }
 
     @Override
-    public RegistryAccess getRegistryManager() {
-        return this.world.getRegistryManager();
+    public RegistryAccess registryAccess() {
+        return this.world.registryAccess();
     }
 
     @Override
-    public FeatureSet getEnabledFeatures() {
-        return this.world.getEnabledFeatures();
+    public FeatureFlagSet enabledFeatures() {
+        return this.world.enabledFeatures();
     }
 
     @Override
-    public EnvironmentAttributeAccess getEnvironmentAttributes() {
-        return this.world.getEnvironmentAttributes();
+    public EnvironmentAttributeReader environmentAttributes() {
+        return this.world.environmentAttributes();
     }
 
     @Override
-    public float getBrightness(Direction direction, boolean shaded) {
-        return 0;
-    }
-
-    @Override
-    public LevelLightEngine getLightingProvider() {
-        return this.world.getLightingProvider();
+    public LevelLightEngine getLightEngine() {
+        return this.world.getLightEngine();
     }
 
     @Override
@@ -125,7 +131,7 @@ public class EmptyWorld implements WorldView {
     }
 
     @Override
-    public List<VoxelShape> getEntityCollisions(@Nullable Entity entity, Box box) {
+    public List<VoxelShape> getEntityCollisions(@Nullable Entity entity, AABB box) {
         return new ArrayList<>();
     }
 
@@ -137,11 +143,11 @@ public class EmptyWorld implements WorldView {
 
     @Override
     public BlockState getBlockState(BlockPos pos) {
-        return Blocks.AIR.getDefaultState();
+        return Blocks.AIR.defaultBlockState();
     }
 
     @Override
     public FluidState getFluidState(BlockPos pos) {
-        return Fluids.EMPTY.getDefaultState();
+        return Fluids.EMPTY.defaultFluidState();
     }
 }

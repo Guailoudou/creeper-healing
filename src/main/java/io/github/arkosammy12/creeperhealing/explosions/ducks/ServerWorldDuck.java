@@ -1,6 +1,7 @@
 package io.github.arkosammy12.creeperhealing.explosions.ducks;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 
 import java.util.Collection;
 
@@ -11,5 +12,7 @@ public interface ServerWorldDuck {
     void creeperhealing$clearAffectedPositions();
 
     boolean creeperhealing$isAffectedPosition(BlockPos pos);
+
+    Level.ExplosionInteraction creeperhealing$getCurrentExplosionInteraction();
 
 }

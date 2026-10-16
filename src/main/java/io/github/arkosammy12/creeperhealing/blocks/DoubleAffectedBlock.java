@@ -9,6 +9,8 @@ import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.server.MinecraftServer;
@@ -33,16 +35,16 @@ public class DoubleAffectedBlock extends SingleAffectedBlock {
 
     public static final String TYPE = "double_affected_block";
 
-    protected DoubleAffectedBlock(BlockPos firstHalfPos, BlockState firstHalfState, @Nullable CompoundTag firstHalfNbt, @Nullable BlockPos secondHalfPos, @Nullable BlockState secondHalfState, @Nullable CompoundTag secondHalfNbt, ResourceKey<World> registryKey, long affectedBlockTimer, boolean placed) {
+    protected DoubleAffectedBlock(BlockPos firstHalfPos, BlockState firstHalfState, @Nullable CompoundTag firstHalfNbt, @Nullable BlockPos secondHalfPos, @Nullable BlockState secondHalfState, @Nullable CompoundTag secondHalfNbt, ResourceKey<Level> registryKey, long affectedBlockTimer, boolean placed) {
         super(firstHalfPos, firstHalfState, registryKey, firstHalfNbt, affectedBlockTimer, placed);
         this.secondHalfNbt = secondHalfNbt;
         if (secondHalfState == null) {
-            if (firstHalfState.contains(Properties.DOUBLE_BLOCK_HALF)) {
-                DoubleBlockHalf secondHalf = firstHalfState.get(Properties.DOUBLE_BLOCK_HALF).equals(DoubleBlockHalf.UPPER) ? DoubleBlockHalf.LOWER : DoubleBlockHalf.UPPER;
-                this.secondHalfState = firstHalfState.getBlock().getStateWithProperties(firstHalfState).with(Properties.DOUBLE_BLOCK_HALF, secondHalf);
-            } else if (firstHalfState.contains(Properties.BED_PART)) {
-                BedPart secondBedPart = firstHalfState.get(Properties.BED_PART).equals(BedPart.HEAD) ? BedPart.FOOT : BedPart.HEAD;
-                this.secondHalfState = firstHalfState.getBlock().getStateWithProperties(firstHalfState).with(Properties.BED_PART, secondBedPart);
+            if (firstHalfState.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)) {
+                DoubleBlockHalf secondHalf = firstHalfState.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF).equals(DoubleBlockHalf.UPPER) ? DoubleBlockHalf.LOWER : DoubleBlockHalf.UPPER;
+                this.secondHalfState = firstHalfState.getBlock().withPropertiesOf(firstHalfState).setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, secondHalf);
+            } else if (firstHalfState.hasProperty(BlockStateProperties.BED_PART)) {
+                BedPart secondBedPart = firstHalfState.getValue(BlockStateProperties.BED_PART).equals(BedPart.HEAD) ? BedPart.FOOT : BedPart.HEAD;
+                this.secondHalfState = firstHalfState.getBlock().withPropertiesOf(firstHalfState).setValue(BlockStateProperties.BED_PART, secondBedPart);
             } else {
                 this.secondHalfState = null;
             }
@@ -80,8 +82,8 @@ public class DoubleAffectedBlock extends SingleAffectedBlock {
     }
 
     @Override
-    protected boolean shouldHealBlock(World world) {
-        return world.getBlockState(this.getBlockPos()).isReplaceable() && world.getBlockState(this.secondHalfPos).isReplaceable();
+    protected boolean shouldHealBlock(Level world) {
+        return world.getBlockState(this.getBlockPos()).canBeReplaced() && world.getBlockState(this.secondHalfPos).canBeReplaced();
     }
 
     @Override
@@ -102,22 +104,22 @@ public class DoubleAffectedBlock extends SingleAffectedBlock {
         BlockPos firstHalfPos = this.getBlockPos();
         BlockState secondHalfState = this.secondHalfState;
         BlockPos secondHalfPos = this.secondHalfPos;
-        World world = this.getWorld(server);
+        Level world = this.getWorld(server);
         boolean stateReplaced = false;
 
-        String blockIdentifier = Registries.BLOCK.getId(firstHalfState.getBlock()).toString();
+        String blockIdentifier = BuiltInRegistries.BLOCK.getKey(firstHalfState.getBlock()).toString();
         StringMapSection replaceMapSection = ConfigUtils.getRawStringMapSection(ConfigUtils.REPLACE_MAP);
         Setting<String, ?> replaceMapValue = replaceMapSection.get(blockIdentifier);
         // Hardcode an exception to allow beds to be replaced with other blocks despite them having an Nbt tag.
-        if (replaceMapValue != null && (!this.shouldForceHeal() || firstHalfState.isIn(BlockTags.BEDS))) {
-            firstHalfState = Registries.BLOCK.get(Identifier.of(replaceMapValue.getValue().getRaw())).getStateWithProperties(firstHalfState);
-            secondHalfState = Registries.BLOCK.get(Identifier.of(replaceMapValue.getValue().getRaw())).getStateWithProperties(secondHalfState);
+        if (replaceMapValue != null && (!this.shouldForceHeal() || firstHalfState.is(BlockTags.BEDS))) {
+            firstHalfState = BuiltInRegistries.BLOCK.getOptional(Identifier.parse(replaceMapValue.getValue().getRaw())).orElse(Blocks.AIR).withPropertiesOf(firstHalfState);
+            secondHalfState = BuiltInRegistries.BLOCK.getOptional(Identifier.parse(replaceMapValue.getValue().getRaw())).orElse(Blocks.AIR).withPropertiesOf(secondHalfState);
             stateReplaced = true;
         }
 
 
         // Prevent both halves of a double block from being replaced with two of a single regular block
-        if (!firstHalfState.contains(Properties.DOUBLE_BLOCK_HALF) && !firstHalfState.contains(Properties.BED_PART)) {
+        if (!firstHalfState.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF) && !firstHalfState.hasProperty(BlockStateProperties.BED_PART)) {
             super.tryHealing(server, currentExplosionEvent);
             return;
         }
@@ -126,7 +128,7 @@ public class DoubleAffectedBlock extends SingleAffectedBlock {
             return;
         }
 
-        ExplosionUtils.pushEntitiesUpwards(world, firstHalfPos, firstHalfState, firstHalfState.contains(Properties.DOUBLE_BLOCK_HALF));
+        ExplosionUtils.pushEntitiesUpwards(world, firstHalfPos, firstHalfState, firstHalfState.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF));
         boolean makeFallingBlocksFall = ConfigUtils.getRawBooleanSetting(ConfigUtils.MAKE_FALLING_BLOCKS_FALL);
         if (firstHalfState.getBlock() instanceof FallingBlock) {
             ExplosionUtils.FALLING_BLOCK_SCHEDULE_TICK.set(makeFallingBlocksFall);
@@ -135,16 +137,16 @@ public class DoubleAffectedBlock extends SingleAffectedBlock {
             ExplosionUtils.FALLING_BLOCK_SCHEDULE_TICK.set(makeFallingBlocksFall);
         }
 
-        world.setBlockState(firstHalfPos, firstHalfState);
-        world.setBlockState(secondHalfPos, secondHalfState);
+        world.setBlockAndUpdate(firstHalfPos, firstHalfState);
+        world.setBlockAndUpdate(secondHalfPos, secondHalfState);
 
         boolean healFirstHalfNbt = this.getNbt() != null && !stateReplaced;
         if (healFirstHalfNbt) {
-            world.addBlockEntity(BlockEntity.createFromNbt(firstHalfPos, firstHalfState, this.getNbt(), world.getRegistryManager()));
+            world.setBlockEntity(BlockEntity.loadStatic(firstHalfPos, firstHalfState, this.getNbt(), world.registryAccess()));
         }
         boolean healSecondHalfNbt = this.secondHalfNbt != null && !stateReplaced;
         if (healSecondHalfNbt) {
-            world.addBlockEntity(BlockEntity.createFromNbt(secondHalfPos, secondHalfState, this.secondHalfNbt, world.getRegistryManager()));
+            world.setBlockEntity(BlockEntity.loadStatic(secondHalfPos, secondHalfState, this.secondHalfNbt, world.registryAccess()));
         }
         ExplosionUtils.playBlockPlacementSoundEffect(world, firstHalfPos, firstHalfState);
         ExplosionUtils.spawnParticles(world, firstHalfPos);
@@ -165,21 +167,21 @@ public class DoubleAffectedBlock extends SingleAffectedBlock {
 
     @Nullable
     public static BlockPos getOtherHalfPos(BlockPos pos, BlockState state) {
-        if (state.contains(Properties.DOUBLE_BLOCK_HALF)) {
+        if (state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)) {
             return DoubleAffectedBlock.getSecondDoubleBlockHalfPos(pos, state);
-        } else if (state.contains(Properties.BED_PART)) {
+        } else if (state.hasProperty(BlockStateProperties.BED_PART)) {
             return DoubleAffectedBlock.getSecondBedBlockHalfPos(pos, state);
         }
         return null;
     }
 
     public static BlockPos getSecondDoubleBlockHalfPos(BlockPos firstHalfPos, BlockState firstHalfState) {
-        return firstHalfState.get(Properties.DOUBLE_BLOCK_HALF).equals(DoubleBlockHalf.UPPER) ? firstHalfPos.down() :  firstHalfPos.up();
+        return firstHalfState.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF).equals(DoubleBlockHalf.UPPER) ? firstHalfPos.below() :  firstHalfPos.above();
     }
 
     public static BlockPos getSecondBedBlockHalfPos(BlockPos firstHalfPos, BlockState firstHalfState) {
-        BedPart secondBedPart = firstHalfState.get(Properties.BED_PART).equals(BedPart.HEAD) ? BedPart.FOOT : BedPart.HEAD;
-        Direction firstBedPartOrientation = firstHalfState.get(Properties.HORIZONTAL_FACING);
+        BedPart secondBedPart = firstHalfState.getValue(BlockStateProperties.BED_PART).equals(BedPart.HEAD) ? BedPart.FOOT : BedPart.HEAD;
+        Direction firstBedPartOrientation = firstHalfState.getValue(BlockStateProperties.HORIZONTAL_FACING);
         return switch (secondBedPart) {
             case HEAD -> switch (firstBedPartOrientation) {
                 case NORTH -> firstHalfPos.north();

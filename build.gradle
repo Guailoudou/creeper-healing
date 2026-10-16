@@ -11,6 +11,7 @@ base {
 }
 
 repositories {
+	mavenLocal()
 	// Add repositories to retrieve artifacts from in here.
 	// You should only use this when depending on other mods because
 	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
@@ -78,13 +79,13 @@ dependencies {
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
 	// Monkey Utils
-	implementation("maven.modrinth:uApL7Qhc:${project.monkey_utils}")
+	implementation("io.github.arkosammy12:monkey-utils:${project.monkey_utils}")
 
 	// Monkey Config
 	implementation("io.github.arkosammy12:monkey-config:${project.monkey_config}")
 
 	// Fabric Permissions API
-	implementation('me.lucko:fabric-permissions-api:0.4.0')
+	implementation('me.lucko:fabric-permissions-api:0.7.1-SNAPSHOT')
 
 	implementation("net.fabricmc:fabric-language-kotlin:${property("fabric_kotlin_version")}")
 }

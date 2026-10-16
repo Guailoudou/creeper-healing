@@ -30,10 +30,10 @@ public class DaytimeExplosionEvent extends AbstractExplosionEvent {
 
     @Override
     public void setup(ServerLevel world) {
-        if (!world.getGameRules().getValue(GameRules.ADVANCE_TIME)) {
+        if (!world.getGameRules().get(GameRules.ADVANCE_TIME)) {
             return;
         }
-        this.healTimer = SharedConstants.TICKS_PER_IN_GAME_DAY - (world.getTimeOfDay() % SharedConstants.TICKS_PER_IN_GAME_DAY);
+        this.healTimer = 24000L - (world.getGameTime() % 24000L);
         int daylightBasedBlockPlacementDelay = (int) (13000 / Math.max(this.getAffectedBlocks().count(), 1));
         for (AffectedBlock affectedBlock : this.getAffectedBlocks().toList()) {
             if (!(affectedBlock instanceof SingleAffectedBlock singleAffectedBlock)) {
@@ -44,15 +44,15 @@ public class DaytimeExplosionEvent extends AbstractExplosionEvent {
     }
 
     @Override
-    public void updateFinishedStatus(World world) {
+    public void updateFinishedStatus(Level world) {
         if (this.getBlockCounter() > 0) {
             return;
         }
         MinecraftServer server = world.getServer();
         boolean sufficientLight = this.getAffectedBlocks().anyMatch(affectedBlock -> {
             BlockPos pos = affectedBlock.getBlockPos();
-            World blockWorld = affectedBlock.getWorld(server);
-            return blockWorld.getLightLevel(LightLayer.BLOCK, pos) > 0 || blockWorld.getLightLevel(LightLayer.SKY, pos) > 0;
+            Level blockWorld = affectedBlock.getWorld(server);
+            return blockWorld.getBrightness(LightLayer.BLOCK, pos) > 0 || blockWorld.getBrightness(LightLayer.SKY, pos) > 0;
         });
         if (!sufficientLight) {
             this.finished = true;

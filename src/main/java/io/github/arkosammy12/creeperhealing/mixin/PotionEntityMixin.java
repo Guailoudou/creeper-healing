@@ -13,28 +13,36 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.At;
 import io.github.arkosammy12.creeperhealing.util.callbacks.SplashPotionCallbacks;
 
 @Mixin(AbstractThrownPotion.class)
 public abstract class PotionEntityMixin extends ThrowableItemProjectile {
 
-    public PotionEntityMixin(EntityType<? extends ThrowableItemProjectile> entityType, World world) {
+    public PotionEntityMixin(EntityType<? extends ThrowableItemProjectile> entityType, Level world) {
         super(entityType, world);
     }
 
+
+
     // Make explosions start healing when you throw a potion of healing or regeneration on them
-    @WrapOperation(method = "onBlockHit", at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemStack;getOrDefault(Lnet/minecraft/component/DataComponentType;Ljava/lang/Object;)Ljava/lang/Object;"))
-    private Object onSplashPotionHit(ItemStack instance, DataComponentType type, Object fallback, Operation<Object> original, @Local(argsOnly = true) BlockHitResult blockHitResult) {
-        Object result = original.call(instance, type, fallback);
-        if (!(((AbstractThrownPotion) (Object) this) instanceof SplashPotionEntity)) {
-            return result;
+    // 26.3: onHitAsPotion(ServerLevel, ItemStack, HitResult) 是药水命中统一入口
+    @Inject(method = "onHitAsPotion", at = @At("HEAD"))
+    private void onSplashPotionHit(net.minecraft.server.level.ServerLevel serverLevel, ItemStack stack, net.minecraft.world.phys.HitResult hitResult, CallbackInfo ci) {
+        if (!(hitResult instanceof BlockHitResult blockHitResult)) {
+            return;
         }
-        if (result instanceof PotionContents potionContentsComponent) {
-            World world = this.getEntityWorld();
-            SplashPotionCallbacks.ON_COLLISION.invoker().onPotionCollide(((AbstractThrownPotion) (Object) this), potionContentsComponent, blockHitResult, world);
+        if (!(stack.getItem() instanceof net.minecraft.world.item.SplashPotionItem)) {
+            return;
         }
-        return result;
+        PotionContents potionContentsComponent = stack.getOrDefault(net.minecraft.core.component.DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
+        if (potionContentsComponent == PotionContents.EMPTY) {
+            return;
+        }
+        Level world = this.level();
+        SplashPotionCallbacks.ON_COLLISION.invoker().onPotionCollide(((AbstractThrownPotion) (Object) this), potionContentsComponent, blockHitResult, world);
     }
 
 }

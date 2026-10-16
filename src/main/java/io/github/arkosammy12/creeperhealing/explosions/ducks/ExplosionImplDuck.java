@@ -9,9 +9,9 @@ public interface ExplosionImplDuck {
 
     boolean creeperhealing$shouldHeal();
 
-    void creeperhealing$setExplosionSourceType(World.ExplosionSourceType explosionSourceType);
+    void creeperhealing$setExplosionSourceType(Level.ExplosionInteraction explosionSourceType);
 
     @Nullable
-    World.ExplosionSourceType creeperhealing$getExplosionSourceType();
+    Level.ExplosionInteraction creeperhealing$getExplosionSourceType();
 
 }

@@ -29,13 +29,13 @@ public class BlastResistanceBasedExplosionEvent extends AbstractExplosionEvent {
     // Change the timers of each affected block based on their blast resistance
     @Override
     public void setup(ServerLevel world) {
-        Random random = world.getRandom();
+        RandomSource random = world.getRandom();
         for (AffectedBlock affectedBlock : this.getAffectedBlocks().toList()) {
             if (!(affectedBlock instanceof SingleAffectedBlock singleAffectedBlock)) {
                 continue;
             }
-            double randomOffset = random.nextBetween(-2, 2);
-            float blastResistance = singleAffectedBlock.getBlockState().getBlock().getBlastResistance();
+            double randomOffset = random.nextInt(5) - 2;
+            float blastResistance = singleAffectedBlock.getBlockState().getBlock().getExplosionResistance();
             double blastResistanceMultiplier = Math.min(blastResistance, 9);
             int offset = (int) (Mth.lerp(blastResistanceMultiplier / 9, -2, 2) + randomOffset);
             long finalOffset = Math.max(1, ConfigUtils.getBlockPlacementDelay() + (offset * 20L));

@@ -15,7 +15,7 @@ public interface SerializedAffectedBlock {
 
     BlockState getBlockState();
 
-    ResourceKey<World> getWorldRegistryKey();
+    ResourceKey<Level> getWorldRegistryKey();
 
     long getBlockTimer();
 

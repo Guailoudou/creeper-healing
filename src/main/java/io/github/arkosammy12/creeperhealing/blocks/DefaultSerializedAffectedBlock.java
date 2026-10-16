@@ -1,5 +1,6 @@
 package io.github.arkosammy12.creeperhealing.blocks;
 
+import net.minecraft.core.registries.Registries;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.world.level.block.state.BlockState;
@@ -20,7 +21,7 @@ public record DefaultSerializedAffectedBlock(
         @Nullable BlockPos secondHalfPos,
         @Nullable BlockState secondHalfState,
         @Nullable CompoundTag secondHalfNbt,
-        ResourceKey<World> worldRegistryKey,
+        ResourceKey<Level> worldRegistryKey,
         long blockTimer,
         boolean placed
 ) implements SerializedAffectedBlock {
@@ -33,7 +34,7 @@ public record DefaultSerializedAffectedBlock(
             BlockPos.CODEC.optionalFieldOf("second_half_pos").forGetter(serializedAffectedBlock -> serializedAffectedBlock.getCustomData("secondHalfPos", BlockPos.class)),
             BlockState.CODEC.optionalFieldOf("second_half_state").forGetter(serializedAffectedBlock -> serializedAffectedBlock.getCustomData("secondHalfState", BlockState.class)),
             CompoundTag.CODEC.optionalFieldOf("second_half_nbt_data").forGetter(serializedAffectedBlock -> serializedAffectedBlock.getCustomData("secondHalfNbt", CompoundTag.class)),
-            World.CODEC.fieldOf("world").forGetter(SerializedAffectedBlock::getWorldRegistryKey),
+            ResourceKey.codec(Registries.DIMENSION).fieldOf("world").forGetter(SerializedAffectedBlock::getWorldRegistryKey),
             Codec.LONG.fieldOf("affected_block_timer").forGetter(SerializedAffectedBlock::getBlockTimer),
             Codec.BOOL.fieldOf("is_placed").forGetter(SerializedAffectedBlock::isPlaced)
     ).apply(instance, (affectedBlockType, blockPos, blockState, optionalNbt, secondHalfPos, secondHalfState, optionalSecondHalfNbt, world, affectedBlockTimer, isPlaced) ->
@@ -55,7 +56,7 @@ public record DefaultSerializedAffectedBlock(
     }
 
     @Override
-    public ResourceKey<World> getWorldRegistryKey() {
+    public ResourceKey<Level> getWorldRegistryKey() {
         return this.worldRegistryKey;
     }
 

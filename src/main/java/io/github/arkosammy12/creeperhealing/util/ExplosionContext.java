@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerLevel;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.Explosion;
 
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,6 @@ public record ExplosionContext(
         List<BlockPos> indirectlyAffectedPositions,
         Map<BlockPos, Pair<BlockState, BlockEntity>> affectedStatesAndBlockEntities,
         ServerLevel world,
-        World.ExplosionSourceType explosionSourceType
+        Level.ExplosionInteraction explosionSourceType
 ) {
 }

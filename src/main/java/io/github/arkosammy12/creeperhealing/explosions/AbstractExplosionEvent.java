@@ -41,7 +41,7 @@ public abstract class AbstractExplosionEvent implements ExplosionEvent {
 
     @Override
     public ServerLevel getWorld(MinecraftServer server) {
-        return server.getWorld(this.affectedBlocks.getFirst().getWorldRegistryKey());
+        return server.getLevel(this.affectedBlocks.getFirst().getWorldRegistryKey());
     }
 
     @Override
@@ -78,7 +78,7 @@ public abstract class AbstractExplosionEvent implements ExplosionEvent {
         this.healTimer = timer;
     }
 
-    protected void updateFinishedStatus(World world) {
+    protected void updateFinishedStatus(Level world) {
     }
 
     abstract protected ExplosionHealingMode getHealingMode();
@@ -146,12 +146,12 @@ public abstract class AbstractExplosionEvent implements ExplosionEvent {
 
     @Override
     public SerializedExplosionEvent asSerialized() {
-        return new DefaultSerializedExplosion(this.getHealingMode().asString(), this.getAffectedBlocks().map(AffectedBlock::asSerialized).toList(), this.healTimer, this.blockCounter, this.radius, this.center);
+        return new DefaultSerializedExplosion(this.getHealingMode().getSerializedName(), this.getAffectedBlocks().map(AffectedBlock::asSerialized).toList(), this.healTimer, this.blockCounter, this.radius, this.center);
     }
 
-    public final void findAndMarkPlaced(BlockPos blockPos, BlockState blockState, World world) {
+    public final void findAndMarkPlaced(BlockPos blockPos, BlockState blockState, Level world) {
         for (AffectedBlock affectedBlock : this.affectedBlocks) {
-            if (affectedBlock.getBlockState().equals(blockState) && affectedBlock.getBlockPos().equals(blockPos) && affectedBlock.getWorldRegistryKey().equals(world.getRegistryKey())) {
+            if (affectedBlock.getBlockState().equals(blockState) && affectedBlock.getBlockPos().equals(blockPos) && affectedBlock.getWorldRegistryKey().equals(world.dimension())) {
                 affectedBlock.setPlaced();
             }
         }

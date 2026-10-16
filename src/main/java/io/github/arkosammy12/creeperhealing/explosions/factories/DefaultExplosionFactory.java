@@ -117,7 +117,7 @@ public class DefaultExplosionFactory implements ExplosionEventFactory<AbstractEx
 
     @Nullable
     private List<AffectedBlock> processAffectedPositions(List<BlockPos> affectedPositions, ServerLevel world) {
-        List<BlockPos> positionsToHeal = ExplosionUtils.filterPositionsToHeal(affectedPositions, (pos) -> this.affectedStatesAndBlockEntities.get(pos).getLeft());
+        List<BlockPos> positionsToHeal = ExplosionUtils.filterPositionsToHeal(affectedPositions, (pos) -> this.affectedStatesAndBlockEntities.get(pos).getFirst());
         if (positionsToHeal.isEmpty()) {
             return null;
         }
@@ -128,8 +128,8 @@ public class DefaultExplosionFactory implements ExplosionEventFactory<AbstractEx
                 continue;
             }
 
-            BlockState affectedState = this.affectedStatesAndBlockEntities.get(pos).getLeft();
-            BlockEntity affectedBlockEntity = this.affectedStatesAndBlockEntities.get(pos).getRight();
+            BlockState affectedState = this.affectedStatesAndBlockEntities.get(pos).getFirst();
+            BlockEntity affectedBlockEntity = this.affectedStatesAndBlockEntities.get(pos).getSecond();
 
             BlockPos otherHalfPos = DoubleAffectedBlock.getOtherHalfPos(pos, affectedState);
             AffectedBlock affectedBlock = null;
@@ -138,8 +138,8 @@ public class DefaultExplosionFactory implements ExplosionEventFactory<AbstractEx
             } else {
                 for (BlockPos otherPos : positionsToHeal) {
                     if (otherPos.equals(otherHalfPos)) {
-                        BlockState secondHalfState = this.affectedStatesAndBlockEntities.get(otherPos).getLeft();
-                        BlockEntity secondHalfBlockEntity = this.affectedStatesAndBlockEntities.get(otherPos).getRight();
+                        BlockState secondHalfState = this.affectedStatesAndBlockEntities.get(otherPos).getFirst();
+                        BlockEntity secondHalfBlockEntity = this.affectedStatesAndBlockEntities.get(otherPos).getSecond();
                         affectedBlock = AffectedBlock.newInstance(pos, affectedState, affectedBlockEntity, otherHalfPos, secondHalfState, secondHalfBlockEntity, world);
                         break;
                     }
