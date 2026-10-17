@@ -27,7 +27,7 @@
 		"minecraft": "26.3",
 		"java": ">=21",
 		"fabric-api": "*",
-		"monkey-utils" : ">=1.0.3"
+		"monkey-utils": "${monkeyUtilsVersion}"
 	},
 	"custom": {
 	  "lithium:options": {
